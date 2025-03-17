@@ -23,17 +23,29 @@ from agents import (
 
 async def main():
     async with LocalPlaywrightComputer() as computer:
+        input_items = [
+            {
+                "role": "user",
+                "content": "Browse wikipedia, and keep clicking on the first link you see until you find the page about Stephen Hawking. Don't search, just click.",
+            }
+        ]
         with trace("Computer use example"):
-            agent = Agent(
-                name="Browser user",
-                instructions="You are a helpful agent.",
-                tools=[ComputerTool(computer)],
-                # Use the computer using model, and set truncation to auto because its required
-                model="computer-use-preview",
-                model_settings=ModelSettings(truncation="auto"),
-            )
-            result = await Runner.run(agent, "Search for SF sports news and summarize.")
-            print(result.final_output)
+            while True:
+                print("Turn ")
+                agent = Agent(
+                    name="Browser user",
+                    instructions="You are a helpful agent.",
+                    tools=[ComputerTool(computer)],
+                    # Use the computer using model, and set truncation to auto because its required
+                    model="computer-use-preview",
+                    model_settings=ModelSettings(truncation="auto"),
+                )
+                result = await Runner.run(
+                    agent,
+                    input_items,
+                    max_turns=10000,
+                )
+                input_items = result.to_input_list()
 
 
 CUA_KEY_TO_PLAYWRIGHT_KEY = {
@@ -79,7 +91,7 @@ class LocalPlaywrightComputer(AsyncComputer):
         browser = await self.playwright.chromium.launch(headless=False, args=launch_args)
         page = await browser.new_page()
         await page.set_viewport_size({"width": width, "height": height})
-        await page.goto("https://www.bing.com")
+        await page.goto("https://en.wikipedia.org/wiki/Main_Page")
         return browser, page
 
     async def __aenter__(self):
