@@ -16,6 +16,7 @@ from ._utils import MaybeAwaitable
 from .computer import AsyncComputer, Computer
 from .exceptions import ModelBehaviorError
 from .function_schema import DocstringStyle, function_schema
+from .items import RunItem
 from .logger import logger
 from .run_context import RunContextWrapper
 from .tracing import SpanError
@@ -26,6 +27,18 @@ ToolFunctionWithoutContext = Callable[ToolParams, Any]
 ToolFunctionWithContext = Callable[Concatenate[RunContextWrapper[Any], ToolParams], Any]
 
 ToolFunction = Union[ToolFunctionWithoutContext[ToolParams], ToolFunctionWithContext[ToolParams]]
+
+
+@dataclass
+class FunctionToolResult:
+    tool: FunctionTool
+    """The tool that was run."""
+
+    output: Any
+    """The output of the tool."""
+
+    run_item: RunItem
+    """The run item that was produced as a result of the tool call."""
 
 
 @dataclass
@@ -43,15 +56,15 @@ class FunctionTool:
     params_json_schema: dict[str, Any]
     """The JSON schema for the tool's parameters."""
 
-    on_invoke_tool: Callable[[RunContextWrapper[Any], str], Awaitable[str]]
+    on_invoke_tool: Callable[[RunContextWrapper[Any], str], Awaitable[Any]]
     """A function that invokes the tool with the given context and parameters. The params passed
     are:
     1. The tool run context.
     2. The arguments from the LLM, as a JSON string.
 
-    You must return a string representation of the tool output. In case of errors, you can either
-    raise an Exception (which will cause the run to fail) or return a string error message (which
-    will be sent back to the LLM).
+    You must return a string representation of the tool output, or something we can call `str()` on.
+    In case of errors, you can either raise an Exception (which will cause the run to fail) or
+    return a string error message (which will be sent back to the LLM).
     """
 
     strict_json_schema: bool = True
@@ -203,7 +216,7 @@ def function_tool(
             strict_json_schema=strict_mode,
         )
 
-        async def _on_invoke_tool_impl(ctx: RunContextWrapper[Any], input: str) -> str:
+        async def _on_invoke_tool_impl(ctx: RunContextWrapper[Any], input: str) -> Any:
             try:
                 json_data: dict[str, Any] = json.loads(input) if input else {}
             except Exception as e:
@@ -250,9 +263,9 @@ def function_tool(
             else:
                 logger.debug(f"Tool {schema.name} returned {result}")
 
-            return str(result)
+            return result
 
-        async def _on_invoke_tool(ctx: RunContextWrapper[Any], input: str) -> str:
+        async def _on_invoke_tool(ctx: RunContextWrapper[Any], input: str) -> Any:
             try:
                 return await _on_invoke_tool_impl(ctx, input)
             except Exception as e:
