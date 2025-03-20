@@ -6,21 +6,23 @@ from collections.abc import AsyncIterator
 import pytest
 from inline_snapshot import snapshot
 from openai.types.responses import ResponseCompletedEvent
-from openai.types.responses.response_text_delta_event import ResponseTextDeltaEvent
+from openai.types.responses.response_text_delta_event import \
+    ResponseTextDeltaEvent
 
 from agents import Agent, Model, ModelSettings, ModelTracing, Tool
 from agents.agent_output import AgentOutputSchema
 from agents.handoffs import Handoff
-from agents.items import (
-    ModelResponse,
-    TResponseInputItem,
-    TResponseOutputItem,
-    TResponseStreamEvent,
-)
-from agents.voice import SingleAgentVoiceWorkflow
+from agents.items import (ModelResponse, TResponseInputItem,
+                          TResponseOutputItem, TResponseStreamEvent)
 
-from ..fake_model import get_response_obj
-from ..test_responses import get_function_tool, get_function_tool_call, get_text_message
+try:
+    from agents.voice import SingleAgentVoiceWorkflow
+
+    from ..fake_model import get_response_obj
+    from ..test_responses import (get_function_tool, get_function_tool_call,
+                                  get_text_message)
+except ImportError:
+    pass
 
 
 class FakeStreamingModel(Model):
