@@ -5,7 +5,7 @@
 Make sure you've followed the base [quickstart instructions](../quickstart.md) for the Agents SDK, and set up a virtual environment. Then, install the optional voice dependencies from the SDK:
 
 ```bash
-pip install openai-agents[voice]
+pip install 'openai-agents[voice]'
 ```
 
 ## Concepts
@@ -91,7 +91,7 @@ agent = Agent(
 We'll set up a simple voice pipeline, using [`SingleAgentVoiceWorkflow`][agents.voice.workflow.SingleAgentVoiceWorkflow] as the workflow.
 
 ```python
-from agents import SingleAgentVoiceWorkflow, VoicePipeline,
+from agents.voice import SingleAgentVoiceWorkflow, VoicePipeline
 pipeline = VoicePipeline(workflow=SingleAgentVoiceWorkflow(agent))
 ```
 
@@ -128,11 +128,13 @@ import sounddevice as sd
 
 from agents import (
     Agent,
+    function_tool,
+    set_tracing_disabled,
+)
+from agents.voice import (
     AudioInput,
     SingleAgentVoiceWorkflow,
     VoicePipeline,
-    function_tool,
-    set_tracing_disabled,
 )
 from agents.extensions.handoff_prompt import prompt_with_handoff_instructions
 
