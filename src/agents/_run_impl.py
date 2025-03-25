@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import inspect
 from collections.abc import Awaitable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
 from openai.types.responses import (
@@ -47,6 +48,7 @@ from .items import (
 )
 from .lifecycle import RunHooks
 from .logger import logger
+from .model_settings import ModelSettings
 from .models.interface import ModelTracing
 from .run_context import RunContextWrapper, TContext
 from .stream_events import RunItemStreamEvent, StreamEvent
@@ -76,6 +78,22 @@ _NOT_FINAL_OUTPUT = ToolsToFinalOutputResult(is_final_output=False, final_output
 
 
 @dataclass
+class AgentToolUseTracker:
+    data: list[tuple[Agent, list[str]]] = field(default_factory=list)
+
+    def add_tool_use(self, agent: Agent[Any], tool_names: list[str]) -> None:
+        existing_data = next((item for item in self.data if item[0] == agent), None)
+        if existing_data:
+            existing_data[1].extend(tool_names)
+        else:
+            self.data.append((agent, tool_names))
+
+    def has_used_tools(self, agent: Agent[Any]) -> bool:
+        existing_data = next((item for item in self.data if item[0] == agent), None)
+        return existing_data is not None and len(existing_data[1]) > 0
+
+
+@dataclass
 class ToolRunHandoff:
     handoff: Handoff
     tool_call: ResponseFunctionToolCall
@@ -99,6 +117,7 @@ class ProcessedResponse:
     handoffs: list[ToolRunHandoff]
     functions: list[ToolRunFunction]
     computer_actions: list[ToolRunComputerAction]
+    tools_used: list[str]  # Names of all tools used, including hosted tools
 
     def has_tools_to_run(self) -> bool:
         # Handoffs, functions and computer actions need local processing
@@ -297,6 +316,18 @@ class RunImpl:
             )
 
     @classmethod
+    def maybe_reset_tool_choice(
+        cls, agent: Agent[Any], tool_use_tracker: AgentToolUseTracker, model_settings: ModelSettings
+    ) -> ModelSettings:
+        """Resets tool choice to None if the agent has used tools and the agent's reset_tool_choice
+        flag is True."""
+
+        if agent.reset_tool_choice is True and tool_use_tracker.has_used_tools(agent):
+            return dataclasses.replace(model_settings, tool_choice=None)
+
+        return model_settings
+
+    @classmethod
     def process_model_response(
         cls,
         *,
@@ -311,7 +342,7 @@ class RunImpl:
         run_handoffs = []
         functions = []
         computer_actions = []
-
+        tools_used: list[str] = []
         handoff_map = {handoff.tool_name: handoff for handoff in handoffs}
         function_map = {tool.name: tool for tool in all_tools if isinstance(tool, FunctionTool)}
         computer_tool = next((tool for tool in all_tools if isinstance(tool, ComputerTool)), None)
@@ -321,12 +352,15 @@ class RunImpl:
                 items.append(MessageOutputItem(raw_item=output, agent=agent))
             elif isinstance(output, ResponseFileSearchToolCall):
                 items.append(ToolCallItem(raw_item=output, agent=agent))
+                tools_used.append("file_search")
             elif isinstance(output, ResponseFunctionWebSearch):
                 items.append(ToolCallItem(raw_item=output, agent=agent))
+                tools_used.append("web_search")
             elif isinstance(output, ResponseReasoningItem):
                 items.append(ReasoningItem(raw_item=output, agent=agent))
             elif isinstance(output, ResponseComputerToolCall):
                 items.append(ToolCallItem(raw_item=output, agent=agent))
+                tools_used.append("computer_use")
                 if not computer_tool:
                     _error_tracing.attach_error_to_current_span(
                         SpanError(
@@ -347,6 +381,8 @@ class RunImpl:
             # At this point we know it's a function tool call
             if not isinstance(output, ResponseFunctionToolCall):
                 continue
+
+            tools_used.append(output.name)
 
             # Handoffs
             if output.name in handoff_map:
@@ -379,6 +415,7 @@ class RunImpl:
             handoffs=run_handoffs,
             functions=functions,
             computer_actions=computer_actions,
+            tools_used=tools_used,
         )
 
     @classmethod
