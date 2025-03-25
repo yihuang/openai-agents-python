@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations as _annotations
 
 import asyncio
 import random
@@ -6,7 +6,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from src.agents import (
+from agents import (
     Agent,
     HandoffOutputItem,
     ItemHelpers,
@@ -22,7 +22,7 @@ from src.agents import (
     handoff,
     trace,
 )
-from src.agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
+from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 
 ### CONTEXT
 
@@ -162,20 +162,15 @@ async def main():
             for new_item in result.new_items:
                 agent_name = new_item.agent.name
                 if isinstance(new_item, MessageOutputItem):
-                    # In tool_choice="required" scenarios, the agent won't produce bare messages;
-                    # instead it will call `respond_to_user`. But if the example is run without
-                    # requiring tool_choice, this branch will handle direct messages.
                     print(f"{agent_name}: {ItemHelpers.text_message_output(new_item)}")
                 elif isinstance(new_item, HandoffOutputItem):
                     print(
                         f"Handed off from {new_item.source_agent.name} to {new_item.target_agent.name}"
                     )
                 elif isinstance(new_item, ToolCallItem):
-                    # Stash the name of the tool call so we can treat respond_to_user specially
                     last_tool_name = getattr(new_item.raw_item, "name", None)
                     print(f"{agent_name} called tool:{f' {last_tool_name}' if last_tool_name else ''}")
                 elif isinstance(new_item, ToolCallOutputItem):
-                    # If the tool call was respond_to_user, treat its output as the message to display.
                     if last_tool_name == "respond_to_user":
                         print(f"{agent_name}: {new_item.output}")
                     else:
