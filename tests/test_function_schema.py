@@ -422,7 +422,7 @@ def test_var_keyword_dict_annotation():
     def func(**kwargs: dict[str, int]):
         return kwargs
 
-    fs = function_schema(func, use_docstring_info=False)
+    fs = function_schema(func, use_docstring_info=False, strict_json_schema=False)
 
     properties = fs.params_json_schema.get("properties", {})
     # The name of the field is "kwargs", and it's a JSON object i.e. a dict.
