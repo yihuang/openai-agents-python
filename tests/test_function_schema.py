@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from enum import Enum
 from typing import Any, Literal
 
@@ -428,3 +429,13 @@ def test_var_keyword_dict_annotation():
     assert properties.get("kwargs").get("type") == "object"
     # The values in the dict are integers.
     assert properties.get("kwargs").get("additionalProperties").get("type") == "integer"
+
+
+def test_schema_with_mapping_raises_strict_mode_error():
+    """A mapping type is not allowed in strict mode. Same for dicts. Ensure we raise a UserError."""
+
+    def func_with_mapping(test_one: Mapping[str, int]) -> str:
+        return "foo"
+
+    with pytest.raises(UserError):
+        function_schema(func_with_mapping)
