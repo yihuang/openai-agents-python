@@ -1,0 +1,16 @@
+              {/* Context */}
+              <div className="context-pre">
+                <h3>Context</h3>
+                <div className="context-card">
+                  <dl>
+                    <dt>Ride ID</dt>
+                    <dd>{context.ride_id || "N/A"}</dd>
+                    <dt>Ride Info</dt>
+                    <dd>{context.ride_info || "N/A"}</dd>
+                    <dt>Uber One</dt>
+                    <dd>{context.uberone ? "Yes" : "No"}</dd>
+                    <dt>Language</dt>
+                    <dd>{context.language || "N/A"}</dd>
+                  </dl>
+                </div>
+              </div>

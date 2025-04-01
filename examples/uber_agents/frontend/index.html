@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Uber Customer Service Chat</title>
+    <!-- React/Babel via CDN (for quick prototyping) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- STYLES -->
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        font-size: 16px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+
+      /* Uber header branding */
+      .uber-header {
+        background-color: #000;
+        color: #fff;
+        padding: 15px 20px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      /* Layout: three columns - Agent Dashboard, Resize Handle, Chat */
+      .container {
+        display: grid;
+        grid-template-columns: var(--dashboard-width, 300px) 5px auto;
+        height: calc(100vh - 60px); /* subtract header height */
+      }
+
+      /* AGENT DASHBOARD SECTION */
+      .dashboard-section {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        background-color: #fafbfc;
+        overflow-y: auto;
+      }
+      .dashboard-section h2 {
+        margin-top: 0;
+        font-size: 20px;
+      }
+      .context-pre, .console-pre {
+        background-color: #ffffff;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        padding: 15px;
+        overflow: auto;
+        margin-bottom: 20px;
+      }
+
+      /* Resize Handle */
+      .resize-handle {
+        cursor: ew-resize;
+        background-color: #ccc;
+      }
+
+      /* Premium Toggle Container */
+      .uberone-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 50px;
+        height: 24px;
+      }
+      .toggle-switch input {
+        display: none;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #fff;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #2196F3;
+      }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+
+      /* LOGS */
+      .logs-section h3 {
+        margin-top: 0;
+        font-size: 18px;
+      }
+      .log-bubble {
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        background-color: #fff;
+        font-size: 14px;
+      }
+      .log-bubble.handoff {
+        border-color: #e57373;
+        background-color: #fce4ec;
+      }
+      .log-bubble.toolcall {
+        border-color: #388e3c;
+        background-color: #cbe6cc;
+      }
+      .log-bubble.toolresult {
+        border-color: #4caf50;
+        background-color: #e8f5e9;
+      }
+      .log-bubble.message {
+        border-color: #eee;
+      }
+      .log-bubble.other {
+        border-color: #ccc;
+      }
+
+      /* CHAT SECTION */
+      .chat-section {
+        display: flex;
+        flex-direction: column;
+        background-color: #f5f7fa;
+      }
+      .messages-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .message-bubble {
+        max-width: 70%;
+        margin-bottom: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 16px;
+      }
+      .message-user {
+        margin-left: auto;
+        background-color: #daf0ff;
+      }
+      .message-agent {
+        margin-right: auto;
+        background-color: #fff;
+        border: 1px solid #eee;
+      }
+
+      .input-container {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+        background-color: #ffffff;
+      }
+      .input-container input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      .input-container button {
+        margin-left: 10px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background-color: #000;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .input-container button:hover {
+        background-color: #333;
+      }
+
+      /* Context Card */
+      .context-card {
+        padding: 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .context-card dl {
+        margin: 0;
+      }
+      .context-card dt {
+        font-weight: 600;
+        color: #555;
+        margin-top: 10px;
+      }
+      .context-card dd {
+        margin: 0;
+        padding-left: 10px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      function App() {
+        const [conversationId, setConversationId] = React.useState(null);
+        const [messages, setMessages] = React.useState([]);
+        const [logs, setLogs] = React.useState([]);
+        const [context, setContext] = React.useState({});
+        const [currentAgentName, setCurrentAgentName] = React.useState("");
+        const [systemPrompt, setSystemPrompt] = React.useState("");
+        const [inputValue, setInputValue] = React.useState("");
+
+        // Refs for container and the resize handle
+        const containerRef = React.useRef(null);
+        const handleRef = React.useRef(null);
+
+        // Initialize conversation on first mount
+        React.useEffect(() => {
+          fetch("/init", { method: "POST" })
+            .then((r) => r.json())
+            .then((data) => setConversationId(data.conversation_id));
+        }, []);
+
+        // Set up resize functionality for the dashboard
+        React.useEffect(() => {
+          const container = containerRef.current;
+          const handle = handleRef.current;
+          let startX = 0;
+          let startWidth = 0;
+
+          const onMouseMove = (e) => {
+            const dx = e.clientX - startX;
+            const newWidth = startWidth + dx;
+            container.style.setProperty("--dashboard-width", newWidth + "px");
+          };
+
+          const onMouseUp = (e) => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+          };
+
+          const onMouseDown = (e) => {
+            startX = e.clientX;
+            startWidth = parseInt(getComputedStyle(container).getPropertyValue("--dashboard-width"), 10) || 300;
+            document.addEventListener("mousemove", onMouseMove);
+            document.addEventListener("mouseup", onMouseUp);
+          };
+
+          handle.addEventListener("mousedown", onMouseDown);
+          return () => {
+            handle.removeEventListener("mousedown", onMouseDown);
+          };
+        }, []);
+
+        const sendMessage = () => {
+          if (!inputValue.trim()) return;
+          const userMsg = { role: "user", content: inputValue };
+          setMessages((prev) => [...prev, userMsg]);
+
+          fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              message: inputValue,
+            }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              setMessages((prev) => [...prev, ...data.agent_messages]);
+              setLogs((prevLogs) => [...prevLogs, ...data.logs]);
+              setContext(data.context);
+              setCurrentAgentName(data.current_agent_name);
+              setSystemPrompt(data.system_prompt);
+            });
+
+          setInputValue("");
+        };
+
+        const handleToggleUberOne = (e) => {
+          if (!conversationId) return;
+          const newVal = e.target.checked; // true or false
+          fetch("/update_uberone", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation_id: conversationId,
+              uberone: newVal,
+            }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              setContext(data.context);
+            });
+        };
+
+        return (
+          <div>
+            <div className="uber-header">Uber Customer Service Chat</div>
+            <div className="container" ref={containerRef}>
+              {/* LEFT COLUMN: Agent Dashboard */}
+              <div className="dashboard-section">
+                <h2>Agent Dashboard</h2>
+                <div className="console-pre">
+                  <h3>Console</h3>
+                  <p><strong>Current Agent:</strong> {currentAgentName}</p>
+                  <p><strong>System Prompt:</strong></p>
+                  <pre style={{ whiteSpace: "pre-wrap" }}>{systemPrompt}</pre>
+                </div>
+                <div className="context-pre">
+                  <h3>Context</h3>
+                  <div className="context-card">
+                    <dl>
+                      <dt>Ride ID</dt>
+                      <dd>{context.ride_id || "N/A"}</dd>
+                      <dt>Ride Info</dt>
+                      <dd>{context.ride_info || "N/A"}</dd>
+                      <dt>Uber One</dt>
+                      <dd>{context.uberone ? "Yes" : "No"}</dd>
+                      <dt>Language</dt>
+                      <dd>{context.language || "N/A"}</dd>
+                    </dl>
+                  </div>
+                </div>
+                <div className="logs-section">
+                  <h3>Logs</h3>
+                  {logs.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className={"log-bubble " + (log.type ? log.type : "other")}
+                    >
+                      {log.description}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* RESIZE HANDLE */}
+              <div className="resize-handle" ref={handleRef}></div>
+
+              {/* RIGHT COLUMN: Chat */}
+              <div className="chat-section">
+                <div className="messages-container">
+                  {messages.map((msg, idx) => {
+                    const isUser = msg.role === "user";
+                    return (
+                      <div
+                        key={idx}
+                        className={
+                          "message-bubble " +
+                          (isUser ? "message-user" : "message-agent")
+                        }
+                      >
+                        <strong>{msg.role}:</strong> {msg.content}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="input-container">
+                  <input
+                    type="text"
+                    placeholder="Type your message here..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        sendMessage();
+                      }
+                    }}
+                  />
+                  <button onClick={sendMessage}>Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

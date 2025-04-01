@@ -1,0 +1,22 @@
+  /* Add styling for context card for elegant context rendering */
+  .context-card {
+    padding: 15px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  .context-card dl {
+    margin: 0;
+  }
+  .context-card dt {
+    font-weight: 600;
+    color: #555;
+    margin-top: 10px;
+  }
+  .context-card dd {
+    margin: 0;
+    padding-left: 10px;
+    color: #333;
+  }
