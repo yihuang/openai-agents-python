@@ -260,3 +260,28 @@ async def test_agent_convert_schemas_unset():
 
     assert baz_tool.params_json_schema == possible_to_convert_schema
     assert baz_tool.strict_json_schema is False, "Shouldn't be converted unless specified"
+
+
+@pytest.mark.asyncio
+async def test_util_adds_properties():
+    """The MCP spec doesn't require the inputSchema to have `properties`, so we need to add it
+    if it's missing.
+    """
+    schema = {
+        "type": "object",
+        "description": "Test tool",
+    }
+
+    server = FakeMCPServer()
+    server.add_tool("test_tool", schema)
+
+    tools = await MCPUtil.get_all_function_tools([server], convert_schemas_to_strict=False)
+    tool = next(tool for tool in tools if tool.name == "test_tool")
+
+    assert isinstance(tool, FunctionTool)
+    assert "properties" in tool.params_json_schema
+    assert tool.params_json_schema["properties"] == {}
+
+    assert tool.params_json_schema == snapshot(
+        {"type": "object", "description": "Test tool", "properties": {}}
+    )
