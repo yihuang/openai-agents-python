@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 import pytest
-from openai import NOT_GIVEN
+from openai import NOT_GIVEN, AsyncOpenAI
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
@@ -31,6 +31,7 @@ from agents import (
     generation_span,
 )
 from agents.models.fake_id import FAKE_RESPONSES_ID
+from agents.models.openai_chatcompletions import _Converter
 
 
 @pytest.mark.allow_call_model_methods
@@ -290,3 +291,39 @@ async def test_fetch_response_stream(monkeypatch) -> None:
     assert response.output == []
     # We returned the async iterator produced by our dummy.
     assert hasattr(stream, "__aiter__")
+
+
+def test_store_param():
+    """Should default to True for OpenAI API calls, and False otherwise."""
+
+    model_settings = ModelSettings()
+    client = AsyncOpenAI()
+    assert _Converter.get_store_param(client, model_settings) is True, (
+        "Should default to True for OpenAI API calls"
+    )
+
+    model_settings = ModelSettings(store=False)
+    assert _Converter.get_store_param(client, model_settings) is False, (
+        "Should respect explicitly set store=False"
+    )
+
+    model_settings = ModelSettings(store=True)
+    assert _Converter.get_store_param(client, model_settings) is True, (
+        "Should respect explicitly set store=True"
+    )
+
+    client = AsyncOpenAI(base_url="http://www.notopenai.com")
+    model_settings = ModelSettings()
+    assert _Converter.get_store_param(client, model_settings) is None, (
+        "Should default to None for non-OpenAI API calls"
+    )
+
+    model_settings = ModelSettings(store=False)
+    assert _Converter.get_store_param(client, model_settings) is False, (
+        "Should respect explicitly set store=False"
+    )
+
+    model_settings = ModelSettings(store=True)
+    assert _Converter.get_store_param(client, model_settings) is True, (
+        "Should respect explicitly set store=True"
+    )
