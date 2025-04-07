@@ -227,7 +227,7 @@ async def test_fetch_response_non_stream(monkeypatch) -> None:
     # Ensure expected args were passed through to OpenAI client.
     kwargs = completions.kwargs
     assert kwargs["stream"] is False
-    assert kwargs["store"] is True
+    assert kwargs["store"] is NOT_GIVEN
     assert kwargs["model"] == "gpt-4"
     assert kwargs["messages"][0]["role"] == "system"
     assert kwargs["messages"][0]["content"] == "sys"
@@ -281,7 +281,7 @@ async def test_fetch_response_stream(monkeypatch) -> None:
         )
     # Check OpenAI client was called for streaming
     assert completions.kwargs["stream"] is True
-    assert completions.kwargs["store"] is True
+    assert completions.kwargs["store"] is NOT_GIVEN
     assert completions.kwargs["stream_options"] == {"include_usage": True}
     # Response is a proper openai Response
     assert isinstance(response, Response)
