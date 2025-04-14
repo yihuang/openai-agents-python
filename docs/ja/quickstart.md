@@ -1,8 +1,8 @@
-# Quickstart
+# クイックスタート
 
-## Create a project and virtual environment
+## プロジェクトと仮想環境の作成
 
-You'll only need to do this once.
+これは一度だけ行えば大丈夫です。
 
 ```bash
 mkdir my_project
@@ -10,31 +10,31 @@ cd my_project
 python -m venv .venv
 ```
 
-### Activate the virtual environment
+### 仮想環境をアクティブにする
 
-Do this every time you start a new terminal session.
+新しいターミナルセッションを開始するたびに行ってください。
 
 ```bash
 source .venv/bin/activate
 ```
 
-### Install the Agents SDK
+### Agents SDK のインストール
 
 ```bash
 pip install openai-agents # or `uv add openai-agents`, etc
 ```
 
-### Set an OpenAI API key
+### OpenAI API キーの設定
 
-If you don't have one, follow [these instructions](https://platform.openai.com/docs/quickstart#create-and-export-an-api-key) to create an OpenAI API key.
+お持ちでない場合は、[こちらの手順](https://platform.openai.com/docs/quickstart#create-and-export-an-api-key)に従って OpenAI API キーを作成してください。
 
 ```bash
 export OPENAI_API_KEY=sk-...
 ```
 
-## Create your first agent
+## 最初のエージェントを作成する
 
-Agents are defined with instructions, a name, and optional config (such as `model_config`)
+エージェントは、instructions、名前、オプションの設定（`model_config` など）で定義されます。
 
 ```python
 from agents import Agent
@@ -45,9 +45,9 @@ agent = Agent(
 )
 ```
 
-## Add a few more agents
+## さらにエージェントを追加する
 
-Additional agents can be defined in the same way. `handoff_descriptions` provide additional context for determining handoff routing
+追加のエージェントも同様に定義できます。`handoff_descriptions` は、ハンドオフルーティングを決定するための追加のコンテキストを提供します。
 
 ```python
 from agents import Agent
@@ -65,9 +65,9 @@ math_tutor_agent = Agent(
 )
 ```
 
-## Define your handoffs
+## ハンドオフを定義する
 
-On each agent, you can define an inventory of outgoing handoff options that the agent can choose from to decide how to make progress on their task.
+各エージェントで、タスクを進める方法を決定するための送信ハンドオフオプションのインベントリを定義できます。
 
 ```python
 triage_agent = Agent(
@@ -77,9 +77,9 @@ triage_agent = Agent(
 )
 ```
 
-## Run the agent orchestration
+## エージェントオーケストレーションを実行する
 
-Let's check that the workflow runs and the triage agent correctly routes between the two specialist agents.
+ワークフローが実行され、トリアージエージェントが2つの専門エージェント間を正しくルーティングするか確認しましょう。
 
 ```python
 from agents import Runner
@@ -89,9 +89,9 @@ async def main():
     print(result.final_output)
 ```
 
-## Add a guardrail
+## ガードレールを追加する
 
-You can define custom guardrails to run on the input or output.
+入力または出力に対してカスタムガードレールを定義できます。
 
 ```python
 from agents import GuardrailFunctionOutput, Agent, Runner
@@ -116,9 +116,9 @@ async def homework_guardrail(ctx, agent, input_data):
     )
 ```
 
-## Put it all together
+## すべてをまとめる
 
-Let's put it all together and run the entire workflow, using handoffs and the input guardrail.
+すべてをまとめて、ハンドオフと入力ガードレールを使用して全体のワークフローを実行しましょう。
 
 ```python
 from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
@@ -176,14 +176,14 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## View your traces
+## トレースを表示する
 
-To review what happened during your agent run, navigate to the [Trace viewer in the OpenAI Dashboard](https://platform.openai.com/traces) to view traces of your agent runs.
+エージェントの実行中に何が起こったかを確認するには、[OpenAI ダッシュボードのトレースビューア](https://platform.openai.com/traces)に移動して、エージェント実行のトレースを表示してください。
 
-## Next steps
+## 次のステップ
 
-Learn how to build more complex agentic flows:
+より複雑なエージェントフローの構築方法を学びましょう：
 
--   Learn about how to configure [Agents](agents.md).
--   Learn about [running agents](running_agents.md).
--   Learn about [tools](tools.md), [guardrails](guardrails.md) and [models](models.md).
+- [エージェント](agents.md)の設定方法を学ぶ。
+- [エージェントの実行](running_agents.md)について学ぶ。
+- [ツール](tools.md)、[ガードレール](guardrails.md)、[モデル](models.md)について学ぶ。
