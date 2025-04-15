@@ -500,7 +500,11 @@ class OpenAIChatCompletionsModel(Model):
             span.span_data.input = converted_messages
 
         parallel_tool_calls = (
-            True if model_settings.parallel_tool_calls and tools and len(tools) > 0 else NOT_GIVEN
+            True
+            if model_settings.parallel_tool_calls and tools and len(tools) > 0
+            else False
+            if model_settings.parallel_tool_calls is False
+            else NOT_GIVEN
         )
         tool_choice = _Converter.convert_tool_choice(model_settings.tool_choice)
         response_format = _Converter.convert_response_format(output_schema)
@@ -524,7 +528,9 @@ class OpenAIChatCompletionsModel(Model):
         reasoning_effort = model_settings.reasoning.effort if model_settings.reasoning else None
         store = _Converter.get_store_param(self._get_client(), model_settings)
 
-        stream_options = _Converter.get_stream_options_param(self._get_client(), model_settings)
+        stream_options = _Converter.get_stream_options_param(
+            self._get_client(), model_settings, stream=stream
+        )
 
         ret = await self._get_client().chat.completions.create(
             model=self.model,
@@ -587,8 +593,11 @@ class _Converter:
 
     @classmethod
     def get_stream_options_param(
-        cls, client: AsyncOpenAI, model_settings: ModelSettings
+        cls, client: AsyncOpenAI, model_settings: ModelSettings, stream: bool
     ) -> dict[str, bool] | None:
+        if not stream:
+            return None
+
         default_include_usage = True if cls.is_openai(client) else None
         include_usage = (
             model_settings.include_usage
