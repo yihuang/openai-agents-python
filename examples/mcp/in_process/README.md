@@ -10,5 +10,5 @@ uv run python -m examples.mcp.in_process.main
 
 ## Details
 
-The example uses the `MCPServerSse` class from `agents.mcp`. The server runs in a sub-process at `https://localhost:8000/sse`.
+The example uses the `FastMCPServer` class from `agents.mcp.fastmcp`. The server is invoked in-process like a function call.
 
