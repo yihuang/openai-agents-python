@@ -1,12 +1,12 @@
 from pathlib import Path
 from typing import Any
 
-from agents.mcp import MCPServer
 from fastmcp.client import Client, ClientTransport
 from fastmcp.server import FastMCP
 from pydantic import AnyUrl
-
 from mcp.types import CallToolResult, Tool
+
+from ..mcp import MCPServer
 
 
 class FastMCPServer(MCPServer):
